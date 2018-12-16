@@ -1,6 +1,6 @@
 #' Function for getting climate data from one place or state
 #'
-#' This function gets unofficial daily records from U.S. National Weather Service COOP stations. Note this is unofficial data.
+#' This function gets unofficial daily records from U.S. National Weather Service COOP stations. Note this is unofficial data. This version is in progress and trying to use json Web Service instead of scraping html.
 #'
 #'#' @param place COOP station ID. You can also look up by name of a city or town station nameby setting the is_station_id argument to FALSE. Leave as default "" to return entire state's results. See https://mesonet.agron.iastate.edu/COOP/extremes.php for available states and stations
 #' @param state two-letter abbreviation for U.S. state, such as "MA" for Massachusetts or "NY" for New York. See https://mesonet.agron.iastate.edu/COOP/extremes.php for available states and stations. Not all U.S. states are available. Can be left blank when looking up by station ID.
@@ -36,7 +36,6 @@
 #' }
 riem_climate <- function(place = "", state = "", the_date = as.character(Sys.Date()), is_station_id = TRUE) {
 
-   base_link <- "https://mesonet.agron.iastate.edu/COOP/extremes.php"
 
    if(nchar(the_date) == 10){
    the_month <- substr(the_date, 6,7)
@@ -55,10 +54,36 @@ riem_climate <- function(place = "", state = "", the_date = as.character(Sys.Dat
 
 
 
- table_date <- paste(month.abb[as.integer(the_month)], the_day)
+ # table_date <- paste(month.abb[as.integer(the_month)], the_day)
+# https://mesonet.agron.iastate.edu/geojson/climodat_dayclimo.py?network=IACLIMATE&month=12&day=16&syear=1800&eyear=2019
 
-baseurl <- "https://mesonet.agron.iastate.edu/COOP/extremes.php"
-queryurl <- paste0(baseurl,"?network=", state, "CLIMATE&month=", the_month, "&day=", the_day, "&tbl=climate" )
+
+base_link <- "https://mesonet.agron.iastate.edu/geojson/climodat_dayclimo.py/"
+
+# query
+page <- httr::GET(url = base_link,
+  query = list(
+    network = paste0(state, "CLIMATE"),
+    month = the_month,
+    date = the_day,
+    syear = 1800,
+    eyear = lubridate::year(the_date) + 1
+  )
+)
+
+content <- httr::content(page)
+# Do for one
+# names(myresults) <- c("Place", "StationID", "Years", "AvgHighTemp", "MaxHighTemp", "YearMaxHighTemp", "MinHighTemp", "YearMinHighTemp", "AvgLowTemp", "MaxLowTemp", "YearMaxLowTemp", "MinLowTemp", "YearMinLowTemp", "AvgPrecip", "MaxPrecip", "YearMaxPrecip")
+ x <- content$features[[1]]$properties
+ Place <- # need to join tables
+ StationID <- x$station
+ Years <- x$years
+ AvgHighTemp <- x$avg_high
+ MaxHighTemp <- x$max_high
+ YearMaxHighTemp <- x$
+
+
+all_results <-
 
  all_results <- suppressWarnings(htmltab::htmltab(queryurl, 2))
  if(nrow(all_results) > 0){
